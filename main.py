@@ -4,7 +4,7 @@ import urllib.parse
 
 def main(page: ft.Page):
     # --- AYARLAR ---
-    page.title = "İşletme Denetim Sistemi V2"
+    page.title = "İşletme Denetim Sistemi V3"
     page.theme_mode = ft.ThemeMode.LIGHT
     page.padding = 10
     
@@ -15,7 +15,6 @@ def main(page: ft.Page):
     def tr_normalize(text):
         if text is None: return ""
         text = str(text)
-        # Karakter düzeltmeleri
         text = text.replace("İ", "i").replace("I", "ı")
         text = text.lower()
         degisimler = str.maketrans("şçöğüı", "scogui")
@@ -48,7 +47,6 @@ def main(page: ft.Page):
                 
                 df_global = df_global.fillna("")
                 
-                # --- İYİLEŞTİRME 2: İLÇEYİ DE ARAMAYA DAHİL ET ---
                 # Arama havuzuna İşletme, Firma ve İlçeyi ekliyoruz.
                 df_global["Gizli_Arama_Metni"] = df_global.apply(
                     lambda row: tr_normalize(f"{row['İşletme Adı']} {row['Firma Adı']} {row['İlçe']}"), 
@@ -73,23 +71,19 @@ def main(page: ft.Page):
                 page.update()
                 return
 
-            # --- İYİLEŞTİRME 1: AKILLI KELİME ARAMA ---
-            # "Ordu Cadı Kazanı" bulmak için "Ordu" ve "Kazanı" kelimelerini ayırıyoruz.
+            # Akıllı Arama Mantığı
             aranan_kelimeler = tr_normalize(girilen_metin).split()
             
             sonuc_listesi.controls.clear()
             
             if df_global is not None and len(aranan_kelimeler) > 0:
-                # Pandas içinde filtreleme: Tüm kelimelerin geçtiği satırları bul
-                # Mantık: Her kelime için tek tek kontrol et, hepsi varsa (AND) getir.
                 mask = pd.Series([True] * len(df_global))
                 for kelime in aranan_kelimeler:
                     mask = mask & df_global["Gizli_Arama_Metni"].str.contains(kelime, na=False)
                 
                 filtrelenmis = df_global[mask]
                 
-                # --- İYİLEŞTİRME 4: PERFORMANS (İlk 50 sonucu göster) ---
-                # Binlerce sonuç gelirse telefon donar, limit koymak iyidir.
+                # İlk 50 sonucu getir
                 for index, row in filtrelenmis.head(50).iterrows():
                     sonuc_listesi.controls.append(
                         ft.Card(
@@ -106,17 +100,22 @@ def main(page: ft.Page):
             print(f"Arama hatası: {ex}")
 
     def harita_ac(servis, adres, ilce):
-        # --- İYİLEŞTİRME 3: ADRESİ GÜÇLENDİRME ---
-        # Sadece mahalle adı yetmez, "Ordu" ve İlçe adını ekleyip garantiye alıyoruz.
-        tam_adres = f"{adres}, {ilce}, Ordu, Türkiye"
-        encoded_adres = urllib.parse.quote(tam_adres)
+        # YENİLİK: Adresi daha belirgin hale getiriyoruz
+        # Mahalle + İlçe + Ordu şeklinde birleştiriyoruz
+        hedef_adres = f"{adres} {ilce} Ordu"
+        
+        # URL uyumlu hale getir (boşluklar %20 olur vb.)
+        encoded_adres = urllib.parse.quote(hedef_adres)
         
         url = ""
         if servis == "google":
+            # Google için en garantili API formatı
             url = f"https://www.google.com/maps/search/?api=1&query={encoded_adres}"
+            
         elif servis == "yandex":
-            # Yandex mobil için en garanti format
-            url = f"https://yandex.com.tr/harita/?text={encoded_adres}"
+            # YENİLİK: Yandex için 'yandexmaps://' protokolü
+            # Bu protokol direkt uygulamanın arama motorunu tetikler
+            url = f"yandexmaps://maps.yandex.com.tr/?text={encoded_adres}"
             
         page.launch_url(url)
 
@@ -141,7 +140,6 @@ def main(page: ft.Page):
                         "Google Maps",
                         icon=ft.Icons.MAP, 
                         style=ft.ButtonStyle(color="white", bgcolor="green"),
-                        # İlçe bilgisini de fonksiyona gönderiyoruz
                         on_click=lambda e: harita_ac("google", row['Adres'], row['İlçe'])
                     ),
                     ft.ElevatedButton(
