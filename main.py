@@ -4,7 +4,7 @@ import urllib.parse
 
 def main(page: ft.Page):
     # --- AYARLAR ---
-    page.title = "İşletme Denetim Sistemi V3"
+    page.title = "İşletme Denetim Sistemi V3.1"
     page.theme_mode = ft.ThemeMode.LIGHT
     page.padding = 10
     
@@ -71,7 +71,7 @@ def main(page: ft.Page):
                 page.update()
                 return
 
-            # Akıllı Arama Mantığı
+            # Akıllı Arama Mantığı (Kelime Kelime)
             aranan_kelimeler = tr_normalize(girilen_metin).split()
             
             sonuc_listesi.controls.clear()
@@ -100,22 +100,19 @@ def main(page: ft.Page):
             print(f"Arama hatası: {ex}")
 
     def harita_ac(servis, adres, ilce):
-        # YENİLİK: Adresi daha belirgin hale getiriyoruz
-        # Mahalle + İlçe + Ordu şeklinde birleştiriyoruz
+        # Adresi garantili hale getiriyoruz
         hedef_adres = f"{adres} {ilce} Ordu"
-        
-        # URL uyumlu hale getir (boşluklar %20 olur vb.)
         encoded_adres = urllib.parse.quote(hedef_adres)
         
         url = ""
         if servis == "google":
-            # Google için en garantili API formatı
+            # Google Maps Linki (api=1 formatı en güvenlisidir)
             url = f"https://www.google.com/maps/search/?api=1&query={encoded_adres}"
             
         elif servis == "yandex":
-            # YENİLİK: Yandex için 'yandexmaps://' protokolü
-            # Bu protokol direkt uygulamanın arama motorunu tetikler
-            url = f"yandexmaps://maps.yandex.com.tr/?text={encoded_adres}"
+            # GÜNCELLEME: Tekrar HTTPS protokolüne döndük ama formatı düzelttik.
+            # Android bu linki görünce "Yandex Haritalar ile aç" seçeneğini sunacaktır.
+            url = f"https://yandex.com.tr/harita/?text={encoded_adres}"
             
         page.launch_url(url)
 
@@ -182,7 +179,7 @@ def main(page: ft.Page):
     
     arama_kutusu = ft.TextField(
         label="İşletme, İlçe veya Firma Ara...", 
-        hint_text="Örn: A101 Perşembe",
+        hint_text="Örn: Yeni Mağazacılık Ulubey",
         prefix_icon=ft.Icons.SEARCH, 
         border_radius=20,
         on_change=arama_yap,
