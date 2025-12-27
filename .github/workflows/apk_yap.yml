@@ -26,12 +26,12 @@ jobs:
         with:
           flutter-version: '3.19.0'
 
-      - name: Kütüphaneleri Yükle (Dosyasız)
+      - name: Kütüphaneleri Yükle
         run: |
           pip install --upgrade pip
-          pip install pandas openpyxl xlrd flet
+          pip install pandas openpyxl xlrd flet cookiecutter
           
-      - name: Flet Derleme Ayarları
+      - name: APK Üretiliyor
         run: |
           flet build apk --verbose
 
