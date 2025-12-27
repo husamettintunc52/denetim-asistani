@@ -15,25 +15,23 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Java Kurulumu (Android için şart)
+      - name: Java Kurulumu
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '17'
-
-      - name: Android SDK Kurulumu
-        uses: android-actions/setup-android@v3
 
       - name: Flutter Kurulumu
         uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.19.0'
 
-      - name: Kütüphaneleri Yükle
+      - name: Kütüphaneleri Yükle (Dosyasız)
         run: |
-          pip install -r requirements.txt
-
-      - name: Flet Ayarları ve Derleme
+          pip install --upgrade pip
+          pip install pandas openpyxl xlrd flet
+          
+      - name: Flet Derleme Ayarları
         run: |
           flet build apk --verbose
 
