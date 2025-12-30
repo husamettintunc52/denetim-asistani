@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Denetim Pro v2</title>
+    
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/5606/5606111.png">
+    
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root { --safe-top: env(safe-area-inset-top); }
+        body { background-color: #f8fafc; -webkit-tap-highlight-color: transparent; }
+        .pwa-header { padding-top: calc(1rem + var(--safe-top)); }
+        .active-scale:active { transform: scale(0.97); }
+        .glass { background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(10px); }
+        input:focus { box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2); }
+    </style>
+</head>
+<body>
+
+    <div class="bg-slate-900 text-white p-5 shadow-xl sticky top-0 z-40 pwa-header">
+        <div class="flex items-center justify-between max-w-xl mx-auto">
+            <div class="flex items-center gap-3">
+                <div class="bg-blue-600 p-2 rounded-lg">
+                    <i class="fas fa-search-location text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="text-lg font-bold leading-none">Denetim Pro</h1>
+                    <span class="text-[10px] text-slate-400 tracking-widest uppercase">Akıllı Arama v2</span>
+                </div>
+            </div>
+            <div id="dataCount" class="text-[10px] font-mono bg-slate-800 px-3 py-1 rounded-full border border-slate-700 text-blue-400">YÜKLENMEDİ</div>
+        </div>
+    </div>
+
+    <div class="p-4 max-w-xl mx-auto">
+        
+        <div id="uploadSection" class="bg-white p-10 rounded-[2.5rem] shadow-sm mb-6 border-2 border-dashed border-slate-200 text-center">
+            <label class="active-scale flex flex-col items-center cursor-pointer">
+                <i class="fas fa-file-excel text-4xl text-green-500 mb-4"></i>
+                <span class="text-slate-700 font-bold">Excel Dosyasını Tanımla</span>
+                <input type="file" id="excelInput" accept=".xlsx, .xls" class="hidden">
+            </label>
+        </div>
+
+        <div class="sticky top-[90px] z-30 mb-6">
+            <div class="relative">
+                <input type="text" id="searchInput" placeholder="İşletme, firma adı veya ilçe yazın..." 
+                    class="w-full p-5 pl-14 rounded-2xl border-none shadow-2xl glass outline-none text-slate-800 font-semibold placeholder:text-slate-400 transition-all" disabled>
+                <i class="fas fa-search absolute left-5 top-1/2 -translate-y-1/2 text-blue-500 text-lg"></i>
+            </div>
+            <p class="text-[10px] text-slate-400 mt-2 px-2 italic font-medium leading-tight">
+                * Kelimeler arasında boşluk bırakarak detaylı arama yapabilirsiniz. (Örn: "fatsa fırın")
+            </p>
+        </div>
+
+        <div id="resultList" class="space-y-4 pb-32"></div>
+    </div>
+
+    <div id="modalOverlay" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm hidden z-50 flex items-end justify-center">
+        <div class="bg-white w-full max-w-lg rounded-t-[3rem] p-8 shadow-2xl relative border-t border-slate-100">
+            <div class="w-16 h-1.5 bg-slate-200 rounded-full mx-auto mb-8"></div>
+            
+            <div id="modalHeader" class="text-center mb-8">
+                <h2 id="modalTitle" class="text-2xl font-black text-slate-900 px-2 leading-tight"></h2>
+                <div id="modalFirma" class="inline-block bg-blue-50 text-blue-600 px-4 py-1 rounded-full text-xs font-bold mt-3 uppercase tracking-wider"></div>
+            </div>
+
+            <div id="modalBody" class="space-y-4 mb-10"></div>
+
+            <div class="grid grid-cols-4 gap-4">
+                <button id="callBtn" class="active-scale flex flex-col items-center gap-2 bg-green-500 text-white p-5 rounded-[2rem] shadow-lg shadow-green-200">
+                    <i class="fas fa-phone-alt text-xl"></i>
+                </button>
+                <button id="googleBtn" class="active-scale flex flex-col items-center gap-2 bg-slate-50 p-5 rounded-[2rem] border border-slate-100 shadow-sm">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/a/aa/Google_Maps_icon_%282020%29.svg" class="w-7 h-7">
+                </button>
+                <button id="yandexBtn" class="active-scale flex flex-col items-center gap-2 bg-slate-50 p-5 rounded-[2rem] border border-slate-100 shadow-sm">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/9/91/Yandex_Maps_icon.svg" class="w-7 h-7">
+                </button>
+                <button id="appleBtn" class="active-scale flex flex-col items-center gap-2 bg-slate-50 p-5 rounded-[2rem] border border-slate-100 shadow-sm">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/3/3d/Apple_Maps_logo.svg" class="w-7 h-7">
+                </button>
+            </div>
+            
+            <button onclick="closeModal()" class="w-full mt-8 py-5 bg-slate-100 text-slate-500 rounded-3xl font-bold active-scale uppercase tracking-widest text-xs">Kapat</button>
+        </div>
+    </div>
+
+    <script>
+        let db = [];
+
+        // Akıllı Türkçe karakter temizleme
+        function cleanText(t) {
+            if (!t) return "";
+            return t.toString()
+                .replace(/İ/g, "i").replace(/I/g, "ı")
+                .toLowerCase()
+                .replace(/ğ/g, "g").replace(/ü/g, "u").replace(/ş/g, "s")
+                .replace(/ö/g, "o").replace(/ç/g, "c")
+                .trim();
+        }
+
+        document.getElementById('excelInput').addEventListener('change', function(e) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const workbook = XLSX.read(new Uint8Array(e.target.result), {type: 'array'});
+                const data = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], {header: "A"});
+                
+                // Veriyi çek ve arama için birleştirilmiş indeks oluştur
+                db = data.slice(1).map(r => ({
+                    isletme: r.C || "İsimsiz İşletme",
+                    kayitNo: r.E || "-",
+                    firma: r.M || "-",
+                    tarih: r.N || "-",
+                    adres: r.Q || "",
+                    ilce: r.R || "",
+                    tel: r.T || "",
+                    // İşletme, Firma ve İlçeyi tek bir metin yaparak aratacağız
+                    index: cleanText(`${r.C} ${r.M} ${r.R}`)
+                }));
+
+                document.getElementById('dataCount').innerText = `${db.length} KAYIT AKTİF`;
+                document.getElementById('searchInput').disabled = false;
+                document.getElementById('uploadSection').style.display = 'none';
+                alert(db.length + " kayıt başarıyla yüklendi.");
+            };
+            reader.readAsArrayBuffer(e.target.files[0]);
+        });
+
+        // DETAYLI ARAMA ALGORİTMASI
+        document.getElementById('searchInput').addEventListener('input', function(e) {
+            const query = cleanText(e.target.value);
+            const list = document.getElementById('resultList');
+            list.innerHTML = "";
+
+            if (query.length < 2) return;
+
+            // Arama terimini parçalara ayır (örn: ["fatsa", "fırın"])
+            const searchTerms = query.split(" ").filter(t => t.length > 0);
+
+            const filtered = db.filter(item => {
+                // Her bir parçanın kayıtta olup olmadığını kontrol et (AND mantığı)
+                return searchTerms.every(term => item.index.includes(term));
+            }).slice(0, 50);
+
+            filtered.forEach(row => {
+                const d = document.createElement('div');
+                d.className = "bg-white p-6 rounded-[1.8rem] shadow-sm active-scale border border-slate-100 flex justify-between items-center";
+                d.innerHTML = `
+                    <div class="flex-1 pr-4">
+                        <div class="text-slate-900 font-extrabold text-base leading-tight mb-1">${row.isletme}</div>
+                        <div class="flex items-center gap-2">
+                            <span class="text-blue-600 text-[10px] font-black uppercase tracking-tighter bg-blue-50 px-2 py-0.5 rounded-md">${row.ilce}</span>
+                            <span class="text-slate-400 text-[10px] font-medium truncate max-w-[150px]">${row.firma}</span>
+                        </div>
+                    </div>
+                    <div class="bg-slate-50 p-3 rounded-2xl"><i class="fas fa-chevron-right text-slate-300 text-xs"></i></div>`;
+                d.onclick = () => openModal(row);
+                list.appendChild(d);
+            });
+        });
+
+        function openModal(r) {
+            document.getElementById('modalTitle').innerText = r.isletme;
+            document.getElementById('modalFirma').innerText = r.firma;
+            document.getElementById('modalBody').innerHTML = `
+                <div class="grid grid-cols-2 gap-3">
+                    <div class="bg-slate-50 p-5 rounded-[2rem] text-center border border-slate-100">
+                        <div class="text-[9px] text-slate-400 font-black uppercase tracking-widest mb-1">Kayıt Numarası</div>
+                        <div class="text-red-600 font-black text-sm">${r.kayitNo}</div>
+                    </div>
+                    <div class="bg-slate-50 p-5 rounded-[2rem] text-center border border-slate-100">
+                        <div class="text-[9px] text-slate-400 font-black uppercase tracking-widest mb-1">Son Denetim</div>
+                        <div class="text-slate-700 font-black text-sm">${r.tarih}</div>
+                    </div>
+                </div>
+                <div class="bg-slate-900 p-6 rounded-[2rem] shadow-xl shadow-slate-200">
+                    <div class="text-[9px] text-slate-500 font-black uppercase tracking-widest mb-2">Denetim Adresi</div>
+                    <div class="text-white text-sm leading-relaxed font-medium italic">"${r.adres}"</div>
+                    <div class="text-blue-400 text-xs font-black mt-3 uppercase tracking-widest underline">${r.ilce} / ORDU</div>
+                </div>`;
+
+            const addr = encodeURIComponent(`${r.adres} ${r.ilce} Ordu`);
+            document.getElementById('callBtn').onclick = () => r.tel ? window.location.href=`tel:${r.tel}` : alert("Telefon bulunamadı.");
+            document.getElementById('googleBtn').onclick = () => window.open(`https://www.google.com/maps/search/?api=1&query=${addr}`);
+            document.getElementById('yandexBtn').onclick = () => {
+                window.location.href = `yandexmaps://maps.yandex.ru/?text=${addr}`;
+                setTimeout(() => { window.open(`https://yandex.com/maps/?text=${addr}`); }, 800);
+            };
+            document.getElementById('appleBtn').onclick = () => window.open(`maps://?q=${addr}`);
+
+            document.getElementById('modalOverlay').classList.remove('hidden');
+        }
+
+        function closeModal() { document.getElementById('modalOverlay').classList.add('hidden'); }
+    </script>
+</body>
+</html>
